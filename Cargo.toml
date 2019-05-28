@@ -1,0 +1,13 @@
+[package]
+name = "insertable_struct_macro_derive"
+version = "0.1.0"
+authors = ["Kea Barnes"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "0.15.34"
+quote = "0.6.12"
+proc-macro2 = "0.4.30"
