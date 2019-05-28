@@ -4,7 +4,7 @@ extern crate syn;
 extern crate quote;
 
 use proc_macro2::{TokenStream};
-use syn::{Field, Fields, Ident, Data};
+use syn::{Fields, Data};
 
 fn struct_content(struct_name: &syn::Ident, fields: &syn::FieldsNamed) -> TokenStream {
     let mut new_fields: Vec<&syn::Field> = Vec::new();
