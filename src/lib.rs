@@ -17,7 +17,7 @@ fn struct_content(struct_name: &syn::Ident, fields: &syn::FieldsNamed) -> TokenS
     });
 
     quote!{
-        #[derive(Debug)]
+        #[derive(Debug, Insertable)]
         pub struct #struct_name{
             #(#new_fields),*
         }
