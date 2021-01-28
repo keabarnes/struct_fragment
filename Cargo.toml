@@ -5,14 +5,15 @@ version = "0.0.1"
 authors = ["Kea Barnes"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
+keywords = ["struct", "partial", "duplicate", "database", "insert"]
 
 [lib]
 proc-macro = true
 
 [dependencies]
-quote = "0.6.12"
-proc-macro2 = "0.4.30"
+quote = "1.0.8"
+proc-macro2 = "1.0.24"
 
 [dependencies.syn]
-version = "0.15.34"
+version = "1.0.60"
 features = ["full"]
