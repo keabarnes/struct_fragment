@@ -2,13 +2,13 @@ use proc_macro2::TokenStream;
 use syn::{Fields, Data, Meta, MetaNameValue, Lit};
 
 
-fn struct_content(struct_name: &syn::Ident, fields: &syn::FieldsNamed, not_inserted_fields: &Option<Vec<String>>, struct_prelude: String) -> TokenStream {
+fn struct_content(struct_name: &syn::Ident, fields: &syn::FieldsNamed, ignore_list: &Option<Vec<String>>, struct_prelude: String) -> TokenStream {
     let mut new_fields: Vec<&syn::Field> = Vec::new();
     fields.named.iter().for_each(|field| {
         let field_name = &field.clone().ident.unwrap().to_string();
-        let has_not_inserted_attr = field.attrs.iter().any(|attr| attr.parse_meta().unwrap().name() == "not_inserted");
-        let in_not_inserted_list = not_inserted_fields.clone().unwrap_or_else(|| vec![]).contains(&field_name);
-        if !in_not_inserted_list && !has_not_inserted_attr {
+        let has_ignore_attr = field.attrs.iter().any(|attr| attr.parse_meta().unwrap().name() == "fragment_ignore");
+        let in_ignore_list = ignore_list.clone().unwrap_or_else(Vec::new).contains(&field_name);
+        if !in_ignore_list && !has_ignore_attr {
             new_fields.push(field);
         }
     });
@@ -23,42 +23,27 @@ fn struct_content(struct_name: &syn::Ident, fields: &syn::FieldsNamed, not_inser
     }
 }
 
-// Implement this using `let field_name = &field.ident.clone().unwrap();§` above
-// impl InsertableThing {
-//   pub fn from_db_structure(original: Artist) -> InsertableThing {
-//     InsertableThing {
-//       name: original.name,
-//       image_link: original.image_link,
-//       image_key: original.image_key,
-//     }
-//   }
-// }
-
 pub fn impl_insertable_struct_macro(ast: &syn::DeriveInput) -> proc_macro::TokenStream {
-    let mut prefix: Option<String> = Some(String::from("Insertable"));
+    let original_struct_name = &ast.ident;
+    let mut fragment_name: String = format!("{}Fragment", original_struct_name);
     let mut struct_prelude: String = String::from("#[derive(Debug)]");
-    let mut not_inserted_fields: Option<Vec<String>> = None;
+    let mut ignore_list: Option<Vec<String>> = None;
 
     for option in ast.attrs.iter() {
         match option.parse_meta().unwrap() {
-            Meta::NameValue(MetaNameValue{ref ident, ref lit, ..}) if ident == "prefix" => {
+            Meta::NameValue(MetaNameValue{ref ident, ref lit, ..}) if ident == "fragment_name" => {
                 if let Lit::Str(lit) = lit {
-                    prefix = Some(lit.value());
+                    fragment_name = lit.value();
                 }
             },
-            Meta::NameValue(MetaNameValue{ref ident, ref lit, ..}) if ident == "insertable_prelude" => {
+            Meta::NameValue(MetaNameValue{ref ident, ref lit, ..}) if ident == "fragment_prelude" => {
                 if let Lit::Str(lit) = lit {
                     struct_prelude = lit.value();
                 }
             },
-            Meta::NameValue(MetaNameValue{ref ident, ref lit, ..}) if ident == "insertable_postable_prelude" => {
+            Meta::NameValue(MetaNameValue{ref ident, ref lit, ..}) if ident == "fragment_ignore_list" => {
                 if let Lit::Str(lit) = lit {
-                    struct_prelude = lit.value();
-                }
-            },
-            Meta::NameValue(MetaNameValue{ref ident, ref lit, ..}) if ident == "not_inserted_csv" => {
-                if let Lit::Str(lit) = lit {
-                    not_inserted_fields = Some(lit.value().split(',').map(|field| {
+                    ignore_list = Some(lit.value().split(',').map(|field| {
                         String::from(field.trim())
                     }).collect());
                 }
@@ -67,14 +52,12 @@ pub fn impl_insertable_struct_macro(ast: &syn::DeriveInput) -> proc_macro::Token
         }
     }
 
-    let name = &ast.ident;
-    let concatenated = format!("{}{}", prefix.unwrap_or_default(), name);
-    let struct_name = syn::Ident::new(&concatenated, name.span());
+    let new_struct_name = syn::Ident::new(&fragment_name, original_struct_name.span());
 
     let block = match ast.data {
         Data::Struct(ref data_struct) => match data_struct.fields {
             Fields::Named(ref fields) => {
-                struct_content(&struct_name, fields, &not_inserted_fields, struct_prelude)
+                struct_content(&new_struct_name, fields, &ignore_list, struct_prelude)
             },
             _ => panic!("Unit structs cannot use derive(IteratorStruct)".to_owned()),
         },

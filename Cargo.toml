@@ -1,8 +1,10 @@
 [package]
-name = "insertable_struct_macro_derive"
-version = "0.1.0"
+name = "struct_fragment"
+description = "A macro to create a duplicate of a struct with keys removed."
+version = "0.0.1"
 authors = ["Kea Barnes"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
 
 [lib]
 proc-macro = true
